@@ -2,8 +2,10 @@
 pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+
 import {USDC} from './USDC.sol';
-contract SFD {
+contract SFD is AccessControl{
     using SafeERC20 for ERC20;
 
     // address public usdctoken;
@@ -12,6 +14,12 @@ contract SFD {
     address public aBLP = 0xaE0628C88EC6C418B3F5C005f804E905f8123833;
     ERC20 public usdctoken;
     ERC20 public arbtoken;
+    bytes32 public constant DISTRIBUTOR_ROLE = keccak256("DISTRIBUTOR_ROLE");
+
+    constructor() {
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    }
+
     function setToken(address _token1,address _token2) public {
         usdctoken = ERC20(_token1);
         arbtoken = ERC20(_token2);
@@ -19,7 +27,7 @@ contract SFD {
     function setEscrowAccount(address _reciever) public {
         escrowAccount = _reciever;
     }
-    function distribute() public   {
+    function distribute() external onlyRole(DISTRIBUTOR_ROLE)   {
         uint256 usdcBalance = usdctoken.balanceOf(address(this));
         if(usdcBalance > 10**usdctoken.decimals()) {
             usdctoken.safeTransfer(uBLP, (usdcBalance * 9500) / 10_000);
@@ -34,6 +42,13 @@ contract SFD {
         arbBalance = arbtoken.balanceOf(address(this));
         arbtoken.safeTransfer(escrowAccount, arbBalance);
        
+       
+    }
+    function withdrawTokenX(
+        ERC20 _tokenX,
+        uint256 _amount
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _tokenX.safeTransfer(msg.sender, _amount);
     }
     // Add any necessary logic for the Distributor contract.
     // For now, it's a simple contract to hold USDC.

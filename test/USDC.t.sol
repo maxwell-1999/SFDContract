@@ -20,6 +20,8 @@ contract USDCTest is Test {
         distributor.setToken(address(usdc),address(arb));
         distributor.setEscrowAccount(reciever);
         console.log('deployed to',address(usdc));
+        distributor.grantRole(distributor.DISTRIBUTOR_ROLE(), address(this));
+
         usdc.transfer(address(distributor),40 * 10 ** usdc.decimals());
         arb.transfer(address(distributor),40 * 10 ** arb.decimals());
         uint256 balance = usdc.balanceOf(address(distributor));
