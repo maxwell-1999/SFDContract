@@ -1,0 +1,3 @@
+anvil --fork-url https://arb-mainnet.g.alchemy.com/v2/edxrzo-1tTGp7V44MMKOKd8bqb8l2hMr
+
+forge test --match-path test/USDC.t.sol -vv  --fork-url http://127.0.0.1:8545
