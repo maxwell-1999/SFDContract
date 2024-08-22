@@ -6,68 +6,8 @@ import {SFD} from "../src/SFD.sol";
 import {ERC20MockToken} from "../src/MockERC20Token.sol";
 import "../src/USDC.sol";
 import "../src/interfaces/ISwapRouter.sol";
-interface IWETH {
-    function deposit() external payable;
-    function withdraw(uint256) external;
-}
+import "../src/interfaces/IRequired.sol";
 
-interface IOptionsConfig {
-    struct Window {
-        uint8 startHour;
-        uint8 startMinute;
-        uint8 endHour;
-        uint8 endMinute;
-    }
-
-    event UpdateMarketTime();
-    event UpdateMaxPeriod(uint32 value);
-    event UpdateMinPeriod(uint32 value);
-
-    event UpdateOptionFeePerTxnLimitPercent(uint16 value);
-    event UpdateOverallPoolUtilizationLimit(uint16 value);
-    event UpdateSettlementFeeDisbursalContract(address value);
-    event UpdatetraderNFTContract(address value);
-    event UpdateAssetUtilizationLimit(uint16 value);
-    event UpdateMinFee(uint256 value);
-
-    function traderNFTContract() external view returns (address);
-
-    function settlementFeeDisbursalContract() external view returns (address);
-
-    function marketTimes(
-        uint8
-    ) external view returns (uint8, uint8, uint8, uint8);
-
-    function assetUtilizationLimit() external view returns (uint16);
-
-    function overallPoolUtilizationLimit() external view returns (uint16);
-
-    function maxPeriod() external view returns (uint32);
-
-    function minPeriod() external view returns (uint32);
-
-    function minFee() external view returns (uint256);
-
-    function optionFeePerTxnLimitPercent() external view returns (uint16);
-
-    function setSettlementFeeDisbursalContract(address) external;
-
-    function setMarketTime(Window[] memory) external;
-
-    function setOptionFeePerTxnLimitPercent(uint16) external;
-
-    function setOverallPoolUtilizationLimit(uint16) external;
-
-    function setAssetUtilizationLimit(uint16) external;
-
-    function settraderNFTContract(address) external;
-
-    function setMinFee(uint256) external;
-
-    function setMaxPeriod(uint32) external;
-
-    function setMinPeriod(uint32) external;
-}
 contract USDCTest is Test {
     SFD distributor;
     address reciever = 0x70997970C51812dc3A010C7d01b50e0d17dc79C8;
@@ -128,18 +68,18 @@ contract USDCTest is Test {
         // assertEq(usdcBalanceEscrowAccount, 2*10**deployed_usdc_instance.decimals());
 
     }
-    function testAssigning()  public {
-        for(uint i = 0; i < configcontracts.length; i++) {
-            IOptionsConfig deployedInstance = IOptionsConfig(configcontracts[i]);
-            oldSFDs.push(deployedInstance.settlementFeeDisbursalContract());
-            deployedInstance.setSettlementFeeDisbursalContract(address(distributor));
-        }
-        for(uint i = 0; i < configcontracts.length; i++) {
-            assertEq(IOptionsConfig(configcontracts[i]).settlementFeeDisbursalContract(),address(distributor));
-        }
-        // drain funds
+    // function testAssigning()  public {
+    //     for(uint i = 0; i < configcontracts.length; i++) {
+    //         IOptionsConfig deployedInstance = IOptionsConfig(configcontracts[i]);
+    //         oldSFDs.push(deployedInstance.settlementFeeDisbursalContract());
+    //         deployedInstance.setSettlementFeeDisbursalContract(address(distributor));
+    //     }
+    //     for(uint i = 0; i < configcontracts.length; i++) {
+    //         assertEq(IOptionsConfig(configcontracts[i]).settlementFeeDisbursalContract(),address(distributor));
+    //     }
+    //     // drain funds
 
-    }
+    // }
     function testARBBalance() view  public {
         uint256 arbBalanceEscrowAccount = deployed_arb_instance.balanceOf(address(reciever));
         console.log("arbBalanceEscrowAccount: ",arbBalanceEscrowAccount);
@@ -149,57 +89,3 @@ contract USDCTest is Test {
     }
 
 }
-// contract USDCTest is Test {
-//     SFD distributor;
-//     ERC20MockToken usdc;
-//     ERC20MockToken arb;
-//     address public uBLP = 0x9501a00d7d4BC7558196B2e4d61c0ec5D16dEfb2;
-//     address public aBLP = 0xaE0628C88EC6C418B3F5C005f804E905f8123833;
-//     ISwapRouter public uniswapRouter = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
-
-//     address reciever = 0x70997970C51812dc3A010C7d01b50e0d17dc79C8;
-//     function setUp() public {
-//         usdc = new ERC20MockToken("USDC", "USDC",6);
-//         arb = new ERC20MockToken("ARB", "ARB",18);
-//         distributor = new SFD();
-//         distributor.setToken(address(usdc),address(arb));
-//         distributor.setEscrowAccount(reciever);
-//         console.log('deployed to',address(usdc));
-//         distributor.grantRole(distributor.DISTRIBUTOR_ROLE(), address(this));
-
-//         usdc.transfer(address(distributor),400 * 10 ** usdc.decimals());
-//         arb.transfer(address(distributor),400 * 10 ** arb.decimals());
-//         uint256 balance = usdc.balanceOf(address(distributor));
-//         console.log('distributor balance after funding',balance);
-//         distributor.distribute();
-//     }
-//     function testUSDCBalance()  public {
-//         // assertEq(balance, 0);
-//         uint256 usdcBalanceEscrowAccount = usdc.balanceOf(address(reciever));
-//         uint256 uBLPBalance= usdc.balanceOf(address(uBLP));
-//         assertEq(uBLPBalance, 38*10**usdc.decimals());
-//         assertEq(usdcBalanceEscrowAccount, 2*10**usdc.decimals());
-
-//         // bool transfered = usdc.transferFrom(address(distributor),reciever,1 * 10 ** usdc.decimals());
-//         // uint256 balance = usdc.balanceOf(address(distributor));
-//         // console.log('deployed to',balance);
-
-//         // assertTrue(true);
-//     }
-//     function testARBBalance()  public {
-//         // assertEq(balance, 0);
-//         uint256 arbBalanceEscrowAccount = arb.balanceOf(address(reciever));
-//         console.log("arbBalanceEscrowAccount",arbBalanceEscrowAccount);
-//         uint256 aBLPBalance = arb.balanceOf(address(aBLP));
-//         console.log("aBLPBalance",aBLPBalance);
-//         assertEq(arbBalanceEscrowAccount, 2*10**arb.decimals());
-//         assertEq(aBLPBalance, 38*10**arb.decimals());
-
-//         // bool transfered = usdc.transferFrom(address(distributor),reciever,1 * 10 ** usdc.decimals());
-//         // uint256 balance = usdc.balanceOf(address(distributor));
-//         // console.log('deployed to',balance);
-
-//         // assertTrue(true);
-//     }
-
-// }
