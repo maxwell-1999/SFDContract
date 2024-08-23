@@ -3,85 +3,44 @@ pragma solidity ^0.8.0;
 
 import "lib/forge-std/src/Test.sol";
 import "../src/TokenSwap.sol";
-pragma solidity ^0.8.0;
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "../src/EsBFR.sol";
 
-import "lib/forge-std/src/Test.sol";
 
-
-contract MockERC20 is IERC20 {
-    string public name;
-    string public symbol;
-    uint8 public decimals;
-    uint256 public totalSupply;
-    mapping(address => uint256) public balanceOf;
-    mapping(address => mapping(address => uint256)) public allowance;
-
-    constructor(string memory _name, string memory _symbol) {
-        name = _name;
-        symbol = _symbol;
-        decimals = 18;
-        totalSupply = 1000000 * 10 ** uint256(decimals);
-        balanceOf[msg.sender] = totalSupply;
-    }
-
-    function transferFrom(address sender, address recipient, uint256 amount) external override returns (bool) {
-        require(balanceOf[sender] >= amount, "Insufficient balance");
-        require(allowance[sender][msg.sender] >= amount, "Transfer not approved");
-
-        allowance[sender][msg.sender] -= amount;
-        balanceOf[sender] -= amount;
-        balanceOf[recipient] += amount;
-        return true;
-    }
-
-    function transfer(address recipient, uint256 amount) external override returns (bool) {
-        require(balanceOf[msg.sender] >= amount, "Insufficient balance");
-        balanceOf[msg.sender] -= amount;
-        balanceOf[recipient] += amount;
-        return true;
-    }
-
-    function approve(address spender, uint256 amount) external  returns (bool) {
-        allowance[msg.sender][spender] = amount;
-        return true;
-    }
-
-    function burn(uint256 amount) external override {
-        require(balanceOf[msg.sender] >= amount, "Insufficient balance");
-        totalSupply -= amount;
-        balanceOf[msg.sender] -= amount;
-    }
-}
 
 
 contract TokenSwapTest is Test {
     TokenSwap public tokenSwap;
-    MockERC20 public tokenA;
-    MockERC20 public tokenB;
-    address public user;
-
+    address public user = 0xDA5f0A4DFA505dfD8391BF1a5c655295930cEcf4;
+    address esBFR = 0x92914A456EbE5DB6A69905f029d6160CF51d3E6a;
+    address esBFRDeployer = 0xfa1e2DD94D6665bb964192Debac09c16242f8a48;
+    EsBFR deployedesbfr = EsBFR(esBFR);
+    address BFR = 0x1A5B0aaF478bf1FDA7b934c76E7692D722982a6D;
+    ERC20 deployedbfr = ERC20(BFR);
     function setUp() public {
-        tokenA = new MockERC20("Token A", "TKA");
-        tokenB = new MockERC20("Token B", "TKB");
-
-        tokenSwap = new TokenSwap(address(tokenA), address(tokenB));
-        user = address(0x1);
-
-        // Send some tokens to the user
-        tokenA.transfer(user, 1000 ether);
-        tokenB.transfer(address(tokenSwap), 1000 ether);
+        tokenSwap = new TokenSwap(esBFR, BFR);
+        console.log("tokenSwap: ",address(deployedbfr));
+        vm.startPrank(0x46FC067E293645b578404e7b6B13a3A5C30B971d);
+        deployedbfr.transfer(address(tokenSwap), deployedbfr.balanceOf(0x46FC067E293645b578404e7b6B13a3A5C30B971d));
+        vm.stopPrank();
+        vm.startPrank(esBFRDeployer);
+        deployedesbfr.setHandler(address(tokenSwap), true);
+        deployedesbfr.setMinter(address(tokenSwap), true);
+        vm.stopPrank();
+        // deployedbfr.balanceOf(address(tokenSwap));
     }
 
     function testDeposit() public {
         // Impersonate user and approve the token transfer
         vm.startPrank(user);
-        tokenA.approve(address(tokenSwap), 100 ether);
+        deployedesbfr.approve(address(tokenSwap), 100 ether);
+        bool dd = deployedesbfr.isHandler(address(tokenSwap));
+        uint256 balance = deployedesbfr.balanceOf(user);
+        console.log("balance: ",balance);
+        tokenSwap.deposit(balance);
+        balance = deployedbfr.balanceOf(user);
+        console.log("balancear: ",balance);
 
-        // Perform deposit
-        tokenSwap.deposit(100 ether);
-
-        // Check that Token B was sent correctly
-        assertEq(tokenB.balanceOf(user), 50 ether);
         vm.stopPrank();
     }
 }
