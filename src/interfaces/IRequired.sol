@@ -1,9 +1,12 @@
+pragma solidity ^0.8.25;
 interface IWETH {
     function deposit() external payable;
     function withdraw(uint256) external;
 }
 
-interface IOptionsConfig {
+import "@openzeppelin/contracts/access/AccessControl.sol";
+
+interface IOptionsConfig is IAccessControl {
     struct Window {
         uint8 startHour;
         uint8 startMinute;
