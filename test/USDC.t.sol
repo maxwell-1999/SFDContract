@@ -7,7 +7,10 @@ import {ERC20MockToken} from "../src/MockERC20Token.sol";
 import "../src/USDC.sol";
 import "../src/interfaces/ISwapRouter.sol";
 import "../src/interfaces/IRequired.sol";
-
+interface ISettlementFeeDistributorV3 {
+    function distribute() external;
+    function withdrawTokenX(ERC20 _tokenX, uint256 _amount) external;
+}
 contract USDCTest is Test {
     SFD distributor;
     address reciever = 0x70997970C51812dc3A010C7d01b50e0d17dc79C8;
@@ -60,6 +63,7 @@ contract USDCTest is Test {
         deployed_usdc_instance.transfer(address(distributor),400 * 10 ** deployed_usdc_instance.decimals());
         deployed_arb_instance.transfer(address(distributor),400 * 10 ** deployed_arb_instance.decimals());
         distributor.distribute();
+
     }
     function testUSDCBalance()view  public {
         uint256 usdcBalanceEscrowAccount = deployed_usdc_instance.balanceOf(address(reciever));
@@ -78,10 +82,32 @@ contract USDCTest is Test {
         for(uint i = 0; i < configcontracts.length; i++) {
             assertEq(IOptionsConfig(configcontracts[i]).settlementFeeDisbursalContract(),address(distributor));
         }
+        for(uint i = 0; i < oldSFDs.length; i++) {
+            ISettlementFeeDistributorV3 deployedInstance = ISettlementFeeDistributorV3(oldSFDs[i]);
+            uint256 arbAmount = deployed_arb_instance.balanceOf(oldSFDs[i]);
+            deployedInstance.withdrawTokenX(ERC20(deployed_arb), arbAmount);
+            arbAmount = deployed_arb_instance.balanceOf(oldSFDs[i]);
+            assertEq(arbAmount,0);
+
+            uint256 usdcAmount = deployed_usdc_instance.balanceOf(oldSFDs[i]);
+            deployedInstance.withdrawTokenX(ERC20(deployed_usdc), usdcAmount);
+            usdcAmount = deployed_usdc_instance.balanceOf(oldSFDs[i]);
+            assertEq(usdcAmount,0);
+        }
         vm.stopPrank();
     }
-    function withdrawFromV3() public {
-        
+   
+    function testWithdraw() public {
+        deployed_usdc_instance.transfer(address(distributor),40 * 10 ** deployed_usdc_instance.decimals());
+        uint256 usdcAmount = deployed_usdc_instance.balanceOf(address(distributor));
+        distributor.withdrawTokenX(ERC20(deployed_usdc), usdcAmount);
+        usdcAmount = deployed_usdc_instance.balanceOf(address(distributor));
+        assertEq(usdcAmount,0);
+        deployed_arb_instance.transfer(address(distributor),40 * 10 ** deployed_arb_instance.decimals());
+        uint256 arbAmount = deployed_arb_instance.balanceOf(address(distributor));
+        distributor.withdrawTokenX(ERC20(deployed_arb), arbAmount);
+        arbAmount = deployed_arb_instance.balanceOf(address(distributor));
+        assertEq(arbAmount,0);
     }
     function testARBBalance() view  public {
         uint256 arbBalanceEscrowAccount = deployed_arb_instance.balanceOf(address(reciever));
