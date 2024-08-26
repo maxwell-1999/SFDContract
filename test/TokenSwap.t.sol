@@ -17,11 +17,14 @@ contract TokenSwapTest is Test {
     EsBFR deployedesbfr = EsBFR(esBFR);
     address BFR = 0x1A5B0aaF478bf1FDA7b934c76E7692D722982a6D;
     ERC20 deployedbfr = ERC20(BFR);
+    address mybfrholder = 0x52bE86E343Dbb35077BfD17A41C146FfA8156688;
     function setUp() public {
         tokenSwap = new TokenSwap(esBFR, BFR);
-        console.log("tokenSwap: ",address(deployedbfr));
-        vm.startPrank(0x46FC067E293645b578404e7b6B13a3A5C30B971d);
-        deployedbfr.transfer(address(tokenSwap), deployedbfr.balanceOf(0x46FC067E293645b578404e7b6B13a3A5C30B971d));
+        vm.startPrank(mybfrholder);
+        console.log("deployedesbfr.balanceOf( richAccountEs): ",deployedesbfr.balanceOf( mybfrholder)/10**deployedesbfr.decimals());
+        uint256 amount = deployedbfr.balanceOf(mybfrholder);
+        console.log("amount: ",amount);
+        deployedbfr.transfer(address(tokenSwap), amount);
         vm.stopPrank();
         vm.startPrank(esBFRDeployer);
         deployedesbfr.setHandler(address(tokenSwap), true);

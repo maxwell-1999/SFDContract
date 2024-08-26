@@ -24,6 +24,7 @@ contract TokenSwap {
         require(amount > 0, "Amount must be greater than 0");
         tokenA.burn(msg.sender, amount);
         uint256 tokenBbalance = tokenB.balanceOf(address(this));
+        console.log("tokenBbalance: ",tokenBbalance);
         require(tokenBbalance >= amount/2, "Not enough funds in contract");
         uint256 amountToSend = amount / 2;
         tokenB.transfer(msg.sender, amountToSend);
